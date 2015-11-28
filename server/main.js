@@ -1,12 +1,13 @@
 var app = require('http').createServer(handler)
 var io = require('socket.io')(app);
 var fs = require('fs');
+var path = require('path')
 
 app.listen(8080);
 console.log('The server is running at 8080 port')
 
 function handler (req, res) {
-  fs.readFile(__dirname + '/dist/app.js',
+  fs.readFile(path.resolve('../dist/app.js'),
   function (err, data) {
     if (err) {
       res.writeHead(500);
@@ -28,7 +29,7 @@ io.on('connection', function (socket) {
 var rooms = [];
 
 var User = function(name){
-    var id = 
+    var id = ''
 }
 
 var Room = function(name){
