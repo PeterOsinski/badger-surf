@@ -14,10 +14,10 @@ function handler (req, res) {
         return res.end('Error loading /dist/app.js');
       }
 
-      res.header('Access-Control-Allow-Origin', '*')
-      res.header('Access-Control-Allow-Credentials', true)
-      res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
-      res.header('Access-Control-Allow-Headers', 'Content-Type')
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Credentials', true)
+      res.setHeader('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+      res.setHeader('Access-Control-Allow-setHeaders', 'Content-Type')
       res.writeHead(200);
       res.end(data);
     });
