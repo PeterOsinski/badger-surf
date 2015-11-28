@@ -13,35 +13,54 @@ function handler (req, res) {
       return res.end('Error loading /dist/app.js');
     }
 
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Credentials', true)
+    res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type')
     res.writeHead(200);
     res.end(data);
   });
 }
 
-io.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
-    console.log(data);
-  });
-});
-
 var rooms = [];
+var users = {};
 
 var User = function(name){
-    var id = 
+    var id = Math.random().toString().slice(2)
+    var name = name
+    this.getId = function(){
+      return id;
+    }
 }
+
 
 var Room = function(name){
 
   var name
   var users = []
 
-  function addMember(user) {
+  this.addMember = function(user) {
     users.push(user)
   }
 
-  function removeUser(user){
+  removeUser = function(user){
     users.splice(users.indexOf(user), 1)
   }
 
 }
+
+io.on('connection', function (socket) {
+  socket.on('get-user', function(uid){
+    if(!uid || !users[uid]){
+      return false
+    }
+
+    return users[uid]
+  })
+
+  // socket.on()
+
+  socket.on('create-room', function (data) {
+    console.log(data);
+  });
+});
