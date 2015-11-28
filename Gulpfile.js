@@ -8,7 +8,6 @@ let gulp       = require('gulp'),
     source     = require('vinyl-source-stream'),
     browserify = require('browserify'),
     babelify   = require('babelify'),
-    reactify   = require('reactify'),
     sourcemaps = require('gulp-sourcemaps'),
     watchify   = require('watchify'),
     buffer     = require('vinyl-buffer'),
@@ -36,7 +35,7 @@ function prepareBrowserify(watch) {
     extensions: ['.js', '.jsx'],
     experimental: true,
     optional: ['runtime'],
-  }), reactify])
+  })])
 
   b.on('log', gutil.log)
 
