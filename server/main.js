@@ -2,6 +2,7 @@ var app = require('http').createServer(handler)
 var io = require('socket.io')(app);
 var fs = require('fs');
 var path = require('path')
+var _ = require('lodash')
 
 app.listen(8080);
 console.log('The server is running at 8080 port')
@@ -28,14 +29,34 @@ function handler (req, res) {
     });
 }
 
-var rooms = [];
+var rooms = {};
 var users = {};
 
-var User = function(name){
-  var id = Math.random().toString().slice(2)
+var mousePositions = {}
+
+var User = function(name, id){
+  var id = id
   var name = name
+  var roomName
+
+  this.setRoomName = function(name){
+    roomName = name
+  }
+
+  this.getRoomName = function(){
+    return roomName
+  }
+
   this.getId = function(){
     return id;
+  }
+
+  this.getName = function(){
+    return name;
+  }
+
+  this.getSocketId = function(){
+    return socketId
   }
 }
 
@@ -43,14 +64,20 @@ var User = function(name){
 var Room = function(name){
 
   var name = name
-  var pin = Math.round(Math.rand()*1000)
+  var pin = Math.round(Math.random()*1000)
   var uids = []
 
   this.addUser = function(uid) {
+    if(uids.indexOf(uid) >= 0){
+      return
+    }
     uids.push(uid)
   }
 
   this.removeUser = function(uid){
+    if(uids.indexOf(uid) === -1){
+      return
+    }
     uids.splice(uids.indexOf(uid), 1)
   }
 
@@ -58,59 +85,146 @@ var Room = function(name){
     return name
   }
 
+  this.getUids = function(uid){
+    return uids
+  }
+
 }
 
 var handlers = {
-  getUser: function(data, callback){
-    if(!uid || !users[uid]){
-      return false
+  getUser: function(data, callback, socket){
+    if(!users[socket.id]){
+      callback(false)
+      return
     }
 
     callback({
-      user:users[uid]
+      user: users[socket.id]
     })
   },
-  createUser: function(data, callback){
-    var u = new User(data.name)
+  createUser: function(data, callback, socket){
+    var u = new User(data.name, socket.id)
 
-    users[user.getId()] = u
+    users[u.getId()] = u
+
     callback({
-      uid:user.getId()
+      uid: u.getId(),
     })
-  },
-  createRoom: function(data, callback){
-    var r = new Room(data.name)
-    r.addUser(uid)
 
+    console.log(users)
+  },
+  createRoom: function(data, callback, socket){
+   
     callback({
       status: true
     })
   },
   getRooms: function(data, callback){
-    callback('success')
-
-  },
-  joinRoom: function(data, callback){
-
     callback({
-      rooms:rooms.map(function(room){
+      rooms:_.map(rooms, function(room, name){
         return room.getName()
       })
     })
+
+  },
+  getRoomUsers: function(data, callback, socket){
+    u = {}
+    
+    _.each(rooms[data.name].getUids(), function(uid){
+      u[uid] = users[uid].getName()
+    })
+
+    callback({
+      users: u
+    })
+  },
+  joinRoom: function(data, callback, socket){
+
+    if(!data.name){
+      return
+    }
+    
+    if(!rooms[data.name]){
+        var r = new Room(data.name)
+        rooms[r.getName()] = r
+    }
+
+    rooms[data.name].addUser(socket.id)
+    users[socket.id].setRoomName(data.name)
+
+    callback(true)
+
+    console.log(rooms)
+    
   },
   mousePosition: function(data, callback, socket){
+    mousePositions[socket.id] = {
+      cssPath: data.cssPath,
+      x: data.x,
+      y: data.y
+    }
 
+    user = users[socket.id]
+
+    if(!user){
+      return
+    }
+
+    roomName = user.getRoomName()
+
+    if(!roomName){
+      return
+    }
+
+    uids = rooms[roomName].getUids()
+
+    positions = {}
+    
+    uids.forEach(function(uid){
+      if(mousePositions[uid] && uid === socket.id){
+        positions[uid] = mousePositions[uid]
+      }
+    })
+
+
+    uids.forEach(function(uid){
+      if(uid !== socket.id){
+        io.to(uid).emit('message', {type:'_mousePosition', data:positions})
+      }
+    })
+  },
+
+  getAllFunctions: function(data, callback){
+    var fns = Object.keys(handlers)
+    callback(fns)
   }
 }
 
 io.on('connection', function (socket) {
+
+  socket.on('disconnect', function(){
+    console.log('Disconnecting: ', socket.id)
+    delete users[socket.id]
+    delete mousePositions[socket.id]
+    _.each(rooms, function(room){
+      room.removeUser(socket.id)
+    })
+
+  })
+
+  console.log('Connecting: ', socket.id)
   socket.on('message', function(msg){
 
     console.log('Received message', msg)
 
+    if(!msg || !msg.data){
+      console.error('No data')
+      return
+    }
+
     handlers[msg.type](msg.data, function(data){
 
-      console.log('Emmited message', msg)
+      // console.log('Emmited message', msg)
       socket.emit('message',{data:data, type: '_'+msg.type})
 
     }, socket)
