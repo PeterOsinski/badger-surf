@@ -7,7 +7,12 @@ app.listen(8080);
 console.log('The server is running at 8080 port')
 
 function handler (req, res) {
-  fs.readFile(path.resolve('../dist/app.js'),
+
+  if(req.url === '/index'){
+    return res.end(fs.readFileSync(__dirname + '/index.html'))
+  }
+
+  fs.readFile(__dirname + '/../dist/app.js',
     function (err, data) {
       if (err) {
         res.writeHead(500);
@@ -17,7 +22,7 @@ function handler (req, res) {
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Access-Control-Allow-Credentials', true)
       res.setHeader('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
-      res.setHeader('Access-Control-Allow-setHeaders', 'Content-Type')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
       res.writeHead(200);
       res.end(data);
     });
@@ -92,6 +97,9 @@ var handlers = {
         return room.getName()
       })
     })
+  },
+  mousePosition: function(data, callback, socket){
+
   }
 }
 
@@ -105,7 +113,7 @@ io.on('connection', function (socket) {
       console.log('Emmited message', msg)
       socket.emit('message',{data:data, type: '_'+msg.type})
 
-    })
+    }, socket)
   })
 
 });
