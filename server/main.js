@@ -36,31 +36,75 @@ var User = function(name){
 
 var Room = function(name){
 
-  var name
-  var users = []
+  var name = name
+  var pin = Math.round(Math.rand()*1000)
+  var uids = []
 
-  this.addMember = function(user) {
-    users.push(user)
+  this.addUser = function(uid) {
+    uids.push(uid)
   }
 
-  removeUser = function(user){
-    users.splice(users.indexOf(user), 1)
+  this.removeUser = function(uid){
+    uids.splice(uids.indexOf(uid), 1)
+  }
+
+  this.getName = function(){
+    return name
   }
 
 }
 
-io.on('connection', function (socket) {
-  socket.on('get-user', function(uid){
+var handlers = {
+  getUser: function(data, callback){
     if(!uid || !users[uid]){
       return false
     }
 
-    return users[uid]
+    callback({
+      user:users[uid]
+    })
+  },
+  createUser: function(data, callback){
+      var u = new User(data.name)
+
+     users[user.getId()] = u  
+     callback({
+      uid:user.getId()
+    })
+  },
+  createRoom: function(data, callback){
+    var r = new Room(data.name)
+      r.addUser(uid)
+
+      callback({
+        status: true
+      })
+  },
+  getRooms: function(data, callback){
+    callback('success')
+    
+  },
+  joinRoom: function(data, callback){
+
+    callback({
+      rooms:rooms.map(function(room){
+            return room.getName()
+          })
+    })
+  }
+}
+
+io.on('connection', function (socket) {
+  socket.on('message', function(msg){
+
+    console.log('Received message', msg)
+
+    handlers[msg.type](msg.data, function(data){
+
+      console.log('Emmited message', msg)
+      socket.emit('message',{data:data, type: '_'+msg.type})
+
+    })
   })
 
-  // socket.on()
-
-  socket.on('create-room', function (data) {
-    console.log(data);
-  });
 });
