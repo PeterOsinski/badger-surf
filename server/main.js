@@ -14,19 +14,19 @@ function handler (req, res) {
   }
 
   fs.readFile(__dirname + '/../dist/app.js',
-  function (err, data) {
-    if (err) {
-      res.writeHead(500);
-      return res.end('Error loading /dist/app.js');
-    }
+    function (err, data) {
+      if (err) {
+        res.writeHead(500);
+        return res.end('Error loading /dist/app.js');
+      }
 
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Credentials', true)
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    res.writeHead(200);
-    res.end(data);
-  });
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Credentials', true)
+      res.setHeader('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.writeHead(200);
+      res.end(data);
+    });
 }
 
 var rooms = {};
